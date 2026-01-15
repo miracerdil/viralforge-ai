@@ -177,6 +177,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Complete onboarding step
+    try {
+      await supabase.rpc('complete_onboarding_step', {
+        p_user_id: user.id,
+        p_step_key: 'create_content_plan',
+      });
+    } catch (e) {
+      // Ignore if already completed
+    }
+
     return NextResponse.json({
       success: true,
       plan: weeklyPlan,

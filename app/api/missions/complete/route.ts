@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     p_user_id: user.id,
     p_amount: xpAmount,
     p_source: 'mission_complete',
-    p_reference_id: mission_id,
+    p_metadata: { mission_id: mission_id, mission_name: mission.title_en || mission.title_tr },
   });
 
   if (xpError) {

@@ -7,6 +7,7 @@ import { UploadForm } from '@/components/dashboard/upload-form';
 import { AnalysisList } from '@/components/dashboard/analysis-list';
 import { DailyMissionCard } from '@/components/missions/daily-mission';
 import { PersonaCard } from '@/components/persona/persona-card';
+import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import type { Dictionary } from '@/lib/i18n/getDictionary';
@@ -171,8 +172,9 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Right Column - Daily Mission & Persona */}
+        {/* Right Column - Onboarding, Daily Mission & Persona */}
         <div className="lg:col-span-1 space-y-6">
+          <OnboardingChecklist locale={locale} />
           <DailyMissionCard
             locale={locale}
             dictionary={dictionary}

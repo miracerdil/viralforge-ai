@@ -43,6 +43,16 @@ export default function RewardsPage() {
         return;
       }
 
+      // Complete onboarding step for visiting rewards shop
+      try {
+        await supabase.rpc('complete_onboarding_step', {
+          p_user_id: user.id,
+          p_step_key: 'visit_rewards_shop',
+        });
+      } catch (e) {
+        // Ignore if already completed
+      }
+
       setLoading(false);
     };
 

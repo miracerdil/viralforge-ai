@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Check, Heart, Share2 } from 'lucide-react';
+import { Copy, Check, Heart, Share2, BarChart3 } from 'lucide-react';
 import { ShareLinkButton } from '@/components/sharing';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UpgradeModal } from '@/components/ui/upgrade-modal';
+import { ResultInputModal } from '@/components/performance/result-input-modal';
 import type { Dictionary } from '@/lib/i18n/getDictionary';
 import type { HookWithFavorite } from '@/lib/types/hooks';
+import type { ContentResultInput } from '@/lib/types/performance';
 
 interface HookCardProps {
   hook: HookWithFavorite;
@@ -28,6 +30,16 @@ export function HookCard({
   const [copied, setCopied] = useState(false);
   const [favoriting, setFavoriting] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+
+  const handleSubmitResult = async (data: ContentResultInput) => {
+    const response = await fetch('/api/performance/results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to submit result');
+  };
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(hook.hook_text);
@@ -114,6 +126,15 @@ export function HookCard({
               title={hook.hook_text.slice(0, 50)}
               locale={locale}
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowResultModal(true)}
+              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+              title={locale === 'tr' ? 'Sonuç Gir' : 'Add Result'}
+            >
+              <BarChart3 className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -123,6 +144,16 @@ export function HookCard({
         dictionary={dictionary}
         locale={locale}
         feature="hooks"
+      />
+      <ResultInputModal
+        isOpen={showResultModal}
+        onClose={() => setShowResultModal(false)}
+        onSubmit={handleSubmitResult}
+        dictionary={dictionary}
+        locale={locale}
+        generationId={hook.id}
+        contentPreview={hook.hook_text}
+        contentType="hook"
       />
     </>
   );

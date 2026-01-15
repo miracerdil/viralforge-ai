@@ -95,6 +95,16 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Complete onboarding step if first A/B test
+      try {
+        await supabase.rpc('complete_onboarding_step', {
+          p_user_id: user.id,
+          p_step_key: 'complete_first_abtest',
+        });
+      } catch (e) {
+        // Ignore if already completed
+      }
+
       return NextResponse.json({ success: true, result });
     } catch (claudeError) {
       console.error('Claude A/B test failed:', claudeError);

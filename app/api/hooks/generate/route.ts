@@ -207,6 +207,20 @@ export async function POST(request: NextRequest) {
           category: effectiveCategorySlug,
         },
       });
+
+      // Complete onboarding steps
+      try {
+        await supabase.rpc('complete_onboarding_step', {
+          p_user_id: user.id,
+          p_step_key: 'generate_first_hook',
+        });
+        await supabase.rpc('complete_onboarding_step', {
+          p_user_id: user.id,
+          p_step_key: 'pick_platform',
+        });
+      } catch (e) {
+        // Ignore if already completed
+      }
     }
 
     return NextResponse.json({

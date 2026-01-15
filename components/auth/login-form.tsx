@@ -97,6 +97,15 @@ export function LoginForm({ dictionary, locale }: LoginFormProps) {
             required
           />
 
+          <div className="flex justify-end">
+            <Link
+              href={`/${locale}/forgot-password`}
+              className="text-sm text-primary-600 hover:underline"
+            >
+              {t.auth.forgotPassword || (locale === 'tr' ? 'Şifremi Unuttum' : 'Forgot Password?')}
+            </Link>
+          </div>
+
           <Button type="submit" className="w-full" isLoading={loading}>
             {t.auth.loginButton}
           </Button>

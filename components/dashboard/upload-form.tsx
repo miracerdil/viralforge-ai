@@ -145,7 +145,10 @@ export function UploadForm({ dictionary, locale, userId, quotaReached }: UploadF
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Analysis failed');
+        const errorMsg = errorData.details
+          ? `${errorData.error}: ${errorData.details}`
+          : errorData.error || 'Analysis failed';
+        throw new Error(errorMsg);
       }
 
       // Redirect to analysis page

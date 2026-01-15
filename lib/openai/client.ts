@@ -182,21 +182,42 @@ async function callOpenAI(
   systemPrompt: string,
   userContent: OpenAI.ChatCompletionContentPart[]
 ): Promise<string> {
-  const response = await openai.chat.completions.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userContent },
-    ],
-  });
+  try {
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
+    });
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error('No response from OpenAI');
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from OpenAI');
+    }
+
+    return content.trim();
+  } catch (error: any) {
+    // Log detailed error for debugging
+    console.error('OpenAI API Error:', {
+      message: error?.message,
+      status: error?.status,
+      code: error?.code,
+      type: error?.type,
+    });
+
+    // Rethrow with more context
+    if (error?.status === 401) {
+      throw new Error('OpenAI API key is invalid or expired');
+    } else if (error?.status === 429) {
+      throw new Error('OpenAI rate limit exceeded. Please try again later.');
+    } else if (error?.status === 500) {
+      throw new Error('OpenAI server error. Please try again.');
+    } else {
+      throw new Error(`OpenAI error: ${error?.message || 'Unknown error'}`);
+    }
   }
-
-  return content.trim();
 }
 
 async function fixJson(invalidJson: string, schema: string, locale: Locale): Promise<string> {

@@ -8,6 +8,7 @@ import type { CategoryGroupId } from '@/lib/types/category';
 import { logActivityWithLocale } from '@/lib/services/activity-logger';
 
 export async function POST(request: NextRequest) {
+  console.log('=== ANALYZE API CALLED ===');
   try {
     const supabase = await createClient();
 
@@ -47,7 +48,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check quota
+    console.log('Checking quota for user:', user.id);
     const quota = await checkAndIncrementQuota(user.id);
+    console.log('Quota result:', quota);
     if (!quota.allowed) {
       return NextResponse.json(
         { error: 'Daily quota exceeded. Upgrade to Pro for unlimited analyses.' },
@@ -80,12 +83,23 @@ export async function POST(request: NextRequest) {
 
     // Call Claude for analysis
     try {
+      console.log('Starting analysis for:', analysisId);
+      console.log('Frame URLs count:', frameUrls.length);
+      console.log('Transcript length:', analysis.transcript?.length || 0);
+
       // Get platform from analysis record (fallback to request or tiktok)
       const analysisPlatform = (analysis as unknown as { platform?: Platform }).platform || platform;
       // Get category from analysis record (fallback to request)
       const analysisData = analysis as unknown as { category_group?: CategoryGroupId; category_slug?: string };
       const analysisCategoryGroup = analysisData.category_group || categoryGroup || 'creator';
       const analysisCategorySlug = analysisData.category_slug || categorySlug || 'lifestyle';
+
+      console.log('Calling analyzeVideo with:', {
+        platform: analysisPlatform,
+        categoryGroup: analysisCategoryGroup,
+        categorySlug: analysisCategorySlug,
+        locale,
+      });
 
       const result = await analyzeVideo({
         transcript: analysis.transcript,
@@ -96,6 +110,8 @@ export async function POST(request: NextRequest) {
         categoryGroup: analysisCategoryGroup,
         categorySlug: analysisCategorySlug,
       });
+
+      console.log('Analysis result received:', result ? 'success' : 'empty');
 
       // Save result
       await supabase
@@ -118,6 +134,16 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Complete onboarding step
+      try {
+        await supabase.rpc('complete_onboarding_step', {
+          p_user_id: user.id,
+          p_step_key: 'analyze_first_video',
+        });
+      } catch (e) {
+        // Ignore if already completed
+      }
+
       return NextResponse.json({ success: true, result });
     } catch (claudeError) {
       console.error('Claude analysis failed:', claudeError);
@@ -125,13 +151,22 @@ export async function POST(request: NextRequest) {
       // Update status to failed
       await supabase.from('analyses').update({ status: 'failed' }).eq('id', analysisId);
 
+      // Return more detailed error message
+      const errorMessage = claudeError instanceof Error ? claudeError.message : 'Unknown error';
       return NextResponse.json(
-        { error: 'Analysis failed. Please try again.' },
+        {
+          error: 'Analysis failed. Please try again.',
+          details: errorMessage,
+        },
         { status: 500 }
       );
     }
   } catch (error) {
     console.error('Analysis error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: 'Internal server error', details: errorMessage },
+      { status: 500 }
+    );
   }
 }
