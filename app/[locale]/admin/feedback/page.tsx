@@ -110,16 +110,25 @@ export default function AdminFeedbackPage() {
     const confirmText = locale === 'tr' ? 'Bu geri bildirimi silmek istediğinize emin misiniz?' : 'Are you sure you want to delete this feedback?';
     if (!confirm(confirmText)) return;
 
-    const { error } = await supabase
+    // Önce feedback_votes'ları sil (foreign key constraint)
+    await supabase
+      .from('feedback_votes')
+      .delete()
+      .eq('feedback_id', feedbackId);
+
+    const { error, count } = await supabase
       .from('feedback_requests')
       .delete()
-      .eq('id', feedbackId);
+      .eq('id', feedbackId)
+      .select();
+
+    console.log('Delete result:', { error, count, feedbackId });
 
     if (!error) {
       setFeedback((prev) => prev.filter((item) => item.id !== feedbackId));
     } else {
       console.error('Error deleting feedback:', error);
-      alert(locale === 'tr' ? 'Silme işlemi başarısız' : 'Delete failed');
+      alert(`Silme hatası: ${error.message} (${error.code})`);
     }
   };
 
